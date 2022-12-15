@@ -1,0 +1,14 @@
+streamlit
+urllib
+bs4
+requests
+pandas
+zipfile
+stqdm
+datetime
+timeit
+time
+subprocess
+shutil
+pathlib
+random

@@ -1,0 +1,20 @@
+[logger]
+level = "debug"
+[browser]
+gatherUsageStats = false
+serverPort = 8501
+[runner]
+fastReruns = false
+[server]
+headless = true
+runOnSave = true
+port = 8501
+enableCORS = false
+enableXsrfProtection=false
+[theme]
+primaryColor="#dca5ce"
+backgroundColor="#0e1117"
+secondaryBackgroundColor="#31333f"
+textColor="#fafafa"
+font="sans serif"
+
