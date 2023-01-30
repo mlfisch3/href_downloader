@@ -25,7 +25,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from pathlib import Path
 from utils.io_tools import download_to_archive, clear_info
-from utils import session
+from utils.session import initialize_session
 from utils.logging import timestamp
 import subprocess
 import re
@@ -193,7 +193,7 @@ def run():
 
 if __name__ == '__main__':
 
-    session.initialize_session()
+    initialize_session()
 
     query_params = st.experimental_get_query_params()
     for k,v in query_params.items():
