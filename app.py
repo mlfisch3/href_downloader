@@ -25,8 +25,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from pathlib import Path
 from utils.io_tools import download_to_archive, clear_info
-from utils.session import initialize_session
 from utils.logging import timestamp
+from utils.session import initialize_session
 import subprocess
 import re
 
