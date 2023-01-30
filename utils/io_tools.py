@@ -9,7 +9,7 @@ from urllib import request
 from bs4 import BeautifulSoup
 import datetime
 import zipfile
-from subprocess import check_output
+from subprocess import check_output, CalledProcessError
 from pathlib import Path
 import pandas as pd
 from stqdm import stqdm
@@ -70,6 +70,9 @@ def download_by_urlretrieve(filenames, urls, dName, delay_lo, delay_hi, delay=Fa
         
     target_count = len(urls)
     not_downloaded = []
+    successful_files = []
+    successful_urls = []
+
     for i, (filename, target_file) in stqdm(enumerate(zip(filenames, urls))):
         print('Downloading (file {} of {} ): {}  ...'.format(i+1, target_count, target_file))
         'Downloading (file {} of {} ): {}  ...'.format(i+1, target_count, target_file)
@@ -77,6 +80,8 @@ def download_by_urlretrieve(filenames, urls, dName, delay_lo, delay_hi, delay=Fa
         fPath = fPath.replace(' ', '_')
         try:
             request.urlretrieve(target_file, filename=fPath)
+            successful_files.append(filename)
+            successful_urls.append(target_file)
         except:
             print("  ╚═► Download failed: {}".format(target_file))
             target_file_ = target_file.replace(' ', '%20')
@@ -87,6 +92,8 @@ def download_by_urlretrieve(filenames, urls, dName, delay_lo, delay_hi, delay=Fa
                 print('  Downloading (file {} of {} ): {}  ...'.format(i+1, target_count, target_file_))
                 try:
                     request.urlretrieve(target_file_, filename=fPath)
+                    successful_files.append(filename)
+                    successful_urls.append(target_file_)
                 except:
                     print("  ╚═► Download failed: {}".format(target_file_))
                     not_downloaded.append(target_file_)
@@ -96,7 +103,13 @@ def download_by_urlretrieve(filenames, urls, dName, delay_lo, delay_hi, delay=Fa
             delta = random.randint(delay_lo,delay_hi)
             time = timeit.timeit('time.sleep(0.01)', number=delta)
             print('[',delta, '] sleeping for ', time,' seconds...')
+        
+    source_info_file_path = os.path.join(dName, "source_info.psv")
+    with open(source_info_file_path, 'w') as source_info_file:
+        for j, (fname, furl) in enumerate(zip(successful_files, successful_urls)):
+            source_info_file.write('|'.join([str(j), fname, furl]) + '\n')
 
+    print(os.lstat(source_info_file_path))
     return not_downloaded
 
 
@@ -111,10 +124,17 @@ def download_by_wget(urls, dName):
                 fout.write(url + '\n')
 
         command="wget -i urls.txt --random-wait -P {}".format(dName)
-        
-        # run command in subprocess
-        check_output(command)
 
+        try:
+            # run command in subprocess
+            check_output(command)
+
+        except CalledProcessError as e:
+            st.session_state.called_process_error = f'exited with error\nreturncode: {e.returncode}\ncmd: {e.cmd}\noutput: {e.output}\nstderr: {e.stderr}'
+            st.session_state.wget_failed = True
+            st.session_state.message = f'Download was denied'
+
+        shutil.move('urls.txt', os.path.join(dName, 'urls.txt'))
 
 def clear_info():
 
@@ -150,13 +170,18 @@ def download_to_archive(filenames, urls, delay_lo=30, delay_hi=120, delay=False)
 
         temp_dir = create_temporary_directory()
 
+        # Download files to server
         not_downloaded = download_by_urlretrieve(st.session_state.filenames, st.session_state.urls, temp_dir, delay_lo, delay_hi, delay)
 
+        # Try to get any files missed in 1st download attempt
         if len(not_downloaded) > 0:
             print("\n ►►► {} files were not downloaded.  Attempting alternate method ...\n".format(len(not_downloaded)))
             download_by_wget(not_downloaded, temp_dir)
 
+        # Copy downloaded files into compressed archive file
         st.session_state.zip_filename, st.session_state.count_downloaded = zip_dir(temp_dir)
+        
+        # remove temporary directory 
         shutil.rmtree(temp_dir, ignore_errors=True)
 
         # st.session_state.message = f'{st.session_state.count_downloaded} files were downloaded to temporary archive {st.session_state.zip_filename}'
