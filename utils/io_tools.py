@@ -166,7 +166,7 @@ def zip_files(temp_dir):
     st.session_state.zip_filename = zip_dir(temp_dir)
 
 
-def download_to_archive(filenames, urls, delay_lo=30, delay_hi=120, delay=False):
+def download_to_archive(filenames, urls, zip_filename=None, delay_lo=30, delay_hi=120, delay=False):
 
         temp_dir = create_temporary_directory()
 
@@ -179,7 +179,7 @@ def download_to_archive(filenames, urls, delay_lo=30, delay_hi=120, delay=False)
             download_by_wget(not_downloaded, temp_dir)
 
         # Copy downloaded files into compressed archive file
-        st.session_state.zip_filename, st.session_state.count_downloaded = zip_dir(temp_dir)
+        st.session_state.zip_filename, st.session_state.count_downloaded = zip_dir(temp_dir, zip_filename=zip_filename)
         
         # remove temporary directory 
         shutil.rmtree(temp_dir, ignore_errors=True)

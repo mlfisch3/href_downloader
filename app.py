@@ -49,19 +49,6 @@ def extract_url_re(href):
     rgx = r'(url\?q\=)(\S+)(&sa\=)'
     return re.search(rgx, href)
 
-
-# @st.experimental_memo(show_spinner=False)
-# def get_target_info(target_url):
-
-#     r=requests.get(target_url, headers={'User-Agent': 'Mozilla/5.0'})
-#     soup = BeautifulSoup(r.text, 'html.parser')
-#     hrefs = soup.find_all("a", href=lambda x: x and "." in os.path.basename(x))
-#     files = list(map(lambda x: x["href"], hrefs))
-#     filenames = list(map(lambda x: x.replace(r'%20','_').replace('__','_-_'), files))
-#     urls = list(map(lambda x: request.urljoin(target_url, x) , files))
-#     filetypes = list(map(lambda x: x.split('.')[-1] , filenames))
-
-#     return pd.DataFrame({'File':filenames, 'URL': urls, 'Type':filetypes})
         
 @st.experimental_memo(show_spinner=False)
 def get_target_info(target_url):
@@ -130,7 +117,7 @@ def run():
 
             
 
-    st.session_state.target_url = st.text_input("Target URL:", "", on_change=clear_info, help="Type exact url (then Enter $\hookleftarrow$) to scan for downloadable files (e.g., https://web.stanford.edu/class/ee398a/handouts/lectures/)")
+    st.session_state.target_url = st.text_input("Target URL:", "http://erewhon.superkuh.com/library/Math", on_change=clear_info, help="Type exact url (then Enter $\hookleftarrow$) to scan for downloadable files (e.g., http://erewhon.superkuh.com/library/Math)")
     
 
     if st.session_state.target_url != "":
@@ -167,7 +154,11 @@ def run():
             if button:
                 ######################################
                 # Download Files to Streamlit Server
-                st.session_state.zip_filename, st.session_state.count_downloaded = download_to_archive(st.session_state.filenames, st.session_state.urls)
+                zip_filename = st.session_state.target_url.split('://')[-1]
+                zip_filename = zip_filename.replace('www.','').replace('.com','').replace('.','_').replace('/','-')
+                zip_filename = zip_filename + '.zip'
+                zip_filename = zip_filename.replace('-.','.')
+                st.session_state.zip_filename, st.session_state.count_downloaded = download_to_archive(st.session_state.filenames, st.session_state.urls, zip_filename=zip_filename)
 
                 if all([not st.session_state.wget_failed, os.path.exists(st.session_state.zip_filename)]):
                 
