@@ -65,7 +65,7 @@ def create_temporary_directory():
     return temp_dir
 
 
-@st.experimental_memo(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def download_by_urlretrieve(filenames, urls, dName, delay_lo, delay_hi, delay=False):
         
     target_count = len(urls)
@@ -114,7 +114,7 @@ def download_by_urlretrieve(filenames, urls, dName, delay_lo, delay_hi, delay=Fa
 
 
 
-@st.experimental_memo(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def download_by_wget(urls, dName):
     if len(urls) > 0:
         

@@ -50,7 +50,7 @@ def extract_url_re(href):
     return re.search(rgx, href)
 
         
-@st.experimental_memo(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def get_target_info(target_url):
 
     r=requests.get(target_url, headers={'User-Agent': 'Mozilla/5.0'})
