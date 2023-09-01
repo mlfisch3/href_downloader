@@ -1,9 +1,11 @@
 import streamlit as st
+
 # import pandas as pd
 # import os
 # import sys
 # from random import randint
 from utils.logging import timestamp
+
 # from utils.config import BASE_DIR_PATH, DEBUG_FILE_PATH, EXAMPLES_DIR_PATH, NPY_DIR_PATH, IMAGE_DIR_PATH, DATA_DIR_PATH
 
 # pd.options.display.width = sys.maxsize
@@ -59,39 +61,42 @@ from utils.logging import timestamp
 
 
 def initialize_session():
+    if "status" not in st.session_state:
+        st.session_state.status = ""
 
-
-
-    if 'query_params' not in st.session_state:
+    if "query_params" not in st.session_state:
         st.session_state.query_params = {}
-        st.session_state.query_params['console'] = False
-        st.session_state.query_params['resources'] = False
-        st.session_state.query_params['cache'] = False
+        st.session_state.query_params["console"] = False
+        st.session_state.query_params["resources"] = False
+        st.session_state.query_params["cache"] = False
 
-    if 'show_resource_usage' not in st.session_state:
+    if "show_resource_usage" not in st.session_state:
         st.session_state.show_resource_usage = False
     else:
         st.session_state.show_resource_usage = False
 
-    if 'show_console' not in st.session_state:
+    if "show_console" not in st.session_state:
         st.session_state.show_console = False
 
-    if 'console_out' not in st.session_state:
-        st.session_state.console_out = ''
+    if "console_out" not in st.session_state:
+        st.session_state.console_out = ""
 
-    if 'console_in' not in st.session_state:
-        st.session_state.console_in = ''
+    if "console_in" not in st.session_state:
+        st.session_state.console_in = ""
 
-    if 'cache_checked' not in st.session_state:
+    if "cache_checked" not in st.session_state:
         st.session_state.cache_checked = False
 
-    if 'data_checked' not in st.session_state:
+    if "data_checked" not in st.session_state:
         st.session_state.data_checked = False
 
-    if 'low_resources' not in st.session_state:
+    if "low_resources" not in st.session_state:
         st.session_state.low_resources = False
-        
-    if 'wget_failed' not in st.session_state:
+
+    if "curl_failed" not in st.session_state:
+        st.session_state.curl_failed = False
+
+    if "wget_failed" not in st.session_state:
         st.session_state.wget_failed = False
 
     if "target_url" not in st.session_state:
@@ -101,13 +106,13 @@ def initialize_session():
         st.session_state.zip_filename = ""
 
     if "urls" not in st.session_state:
-        st.session_state.urls = []    
+        st.session_state.urls = []
 
     if "selected_targets_info" not in st.session_state:
-        st.session_state.selected_targets_info = [] 
+        st.session_state.selected_targets_info = []
 
     if "filenames" not in st.session_state:
-        st.session_state.filenames = []  
+        st.session_state.filenames = []
 
     if "target_info" not in st.session_state:
         st.session_state.target_info = None
@@ -121,9 +126,10 @@ def initialize_session():
     if "count_downloaded" not in st.session_state:
         st.session_state.count_downloaded = 0
 
-    if 'called_process_error' not in st.session_state:
+    if "called_process_error" not in st.session_state:
         st.session_state.called_process_error = None
-    
+
+
 #     if 'granularity_selection_key' not in st.session_state:
 #         st.session_state.granularity_selection_key = str(randint(1000, 10000000))
 
@@ -132,22 +138,22 @@ def initialize_session():
 
 #     if 'granularity_dict' not in st.session_state:
 #         st.session_state.granularity_dict = {'standard': 0.1, 'boost': 0.3, 'max': 0.5}
-    
+
 #     if 'granularity_selection' not in st.session_state:
 #         st.session_state.granularity_selection = st.session_state.granularity_options[st.session_state.granularity_selection_index]
 
 #     if 'viewer_options' not in st.session_state:
 #         st.session_state.viewer_options = ("Enhanced Image", "Original vs Enhanced", "Comparisons (interactive)", "Show All Processing Steps")
-    
+
 #     if 'viewer_selection_key' not in st.session_state:
 #         st.session_state.viewer_selection_key = str(randint(1000, 10000000))
 
 #     if 'viewer_selection_index' not in st.session_state:
-#         st.session_state.viewer_selection_index = 1     
+#         st.session_state.viewer_selection_index = 1
 
 #     if 'viewer_selection' not in st.session_state:
 #         st.session_state.viewer_selection = st.session_state.viewer_options[st.session_state.viewer_selection_index]
-    
+
 #     if 'comparison_options' not in st.session_state:
 #         st.session_state.comparison_options = ("Original Image", "Enhanced Image", "Illumination Map", "Total Variation", "Fusion Weights", "Max Entropy Exposure", "Texture Weights", "Fine Texture Map", "Enhancement Map")
 
@@ -155,7 +161,7 @@ def initialize_session():
 #         st.session_state.left_image_selection_key = str(randint(1000, 10000000))
 
 #     if 'left_image_selection_index' not in st.session_state:
-#         st.session_state.left_image_selection_index = 0     
+#         st.session_state.left_image_selection_index = 0
 
 #     if 'left_image_selection' not in st.session_state:
 #         st.session_state.left_image_selection = st.session_state.comparison_options[st.session_state.left_image_selection_index]
@@ -164,14 +170,14 @@ def initialize_session():
 #         st.session_state.right_image_selection_key = str(randint(1000, 10000000))
 
 #     if 'right_image_selection_index' not in st.session_state:
-#         st.session_state.right_image_selection_index = 1     
+#         st.session_state.right_image_selection_index = 1
 
 #     if 'right_image_selection' not in st.session_state:
 #         st.session_state.right_image_selection = st.session_state.comparison_options[st.session_state.right_image_selection_index]
 
 #     if 'texture_weight_calculator_options' not in st.session_state:
 #         st.session_state.texture_weight_calculator_options = ('I', 'II', 'III', 'IV', 'V')
-    
+
 #     if 'texture_weight_calculator_selection_key' not in st.session_state:
 #         st.session_state.texture_weight_calculator_selection_key = str(randint(1000, 10000000))
 
@@ -186,7 +192,7 @@ def initialize_session():
 #                                 'IV': ('IV', 0.5*CG_TOL, LU_TOL, MAX_ITER, FILL/2),
 #                                 'V':  ('V', CG_TOL, LU_TOL, MAX_ITER, FILL)
 #                                 }
-    
+
 #     if 'texture_weight_calculator_selection' not in st.session_state:
 #         st.session_state.texture_weight_calculator_selection = st.session_state.texture_weight_calculator_options[st.session_state.texture_weight_calculator_selection_index]
 
@@ -195,7 +201,7 @@ def initialize_session():
 
 #     if 'examples_dir' not in st.session_state:
 #         st.session_state.examples_dir = EXAMPLES_DIR_PATH
-        
+
 #     if 'npy_dir' not in st.session_state:
 #         st.session_state.npy_dir = NPY_DIR_PATH
 
@@ -214,9 +220,9 @@ def initialize_session():
 
 #     # if 'left_image_selection' not in st.session_state:
 #     #     st.session_state.left_image_selection = "Original Image"
-        
+
 #     # if 'right_image_selection' not in st.session_state:
-#     #     st.session_state.right_image_selection = "Enhanced Image"     
+#     #     st.session_state.right_image_selection = "Enhanced Image"
 
 #     # if 'left_image_selection_index' not in st.session_state:
 #     #     st.session_state.left_image_selection_index = 0
@@ -250,7 +256,7 @@ def initialize_session():
 
 #     if 'source_last_updated' not in st.session_state:
 #         st.session_state.source_last_updated = 'local'
-        
+
 #     if 'completed_app_runs' not in st.session_state:
 #         st.session_state.completed_app_runs = 0
 
@@ -305,7 +311,7 @@ def initialize_session():
 
 #     if 'named_keys' not in st.session_state:
 #         st.session_state.named_keys = {}
-    
+
 #     if 'exposure_ratio' not in st.session_state:
 #         st.session_state.exposure_ratio = -1
 
@@ -313,7 +319,7 @@ def initialize_session():
 #         st.session_state.mmap_wrefs = {}       # store weak references to variables bound via memory map to file
 
 #     if 'mmap_file_wrefs_lookup' not in st.session_state:  # key: name of weak ref variable, value: (name of stong ref, name of memmapped file)
-#         st.session_state.mmap_file_wref_lookup = {} 
+#         st.session_state.mmap_file_wref_lookup = {}
 
 #     if 'saved_images' not in st.session_state:
 #         st.session_state.saved_images = {}
@@ -322,17 +328,17 @@ def initialize_session():
 #         st.session_state.paths = {}
 
 #     if 'keys_' not in st.session_state:
-#         st.session_state.keys_ = Keys("initializing", 
-#                                      default_granularity, 
-#                                      default_kernel_parallel, 
+#         st.session_state.keys_ = Keys("initializing",
+#                                      default_granularity,
+#                                      default_kernel_parallel,
 #                                      default_kernel_orthogonal,
-#                                      default_sharpness, 
-#                                      default_texture_style, 
-#                                      default_smoothness, 
-#                                      default_power, 
+#                                      default_sharpness,
+#                                      default_texture_style,
+#                                      default_smoothness,
+#                                      default_power,
 #                                      default_a,
 #                                      default_b,
-#                                      default_exposure_ratio_in, 
+#                                      default_exposure_ratio_in,
 #                                      default_color_gamma,
 #                                      default_lo,
 #                                      default_hi)
@@ -356,21 +362,21 @@ def initialize_session():
 
 # class Keys:
 
-#     def __init__(self, image_input_key, 
-#                     scale, 
-#                     kernel_parallel, 
+#     def __init__(self, image_input_key,
+#                     scale,
+#                     kernel_parallel,
 #                     kernel_orthogonal,
-#                     sharpness, 
-#                     texture_style, 
-#                     lamda, 
-#                     power, 
-#                     exposure_ratio_in, 
+#                     sharpness,
+#                     texture_style,
+#                     lamda,
+#                     power,
+#                     exposure_ratio_in,
 #                     color_gamma,
 #                     a,
 #                     b,
 #                     min_gain,
 #                     max_gain):
-        
+
 #         self.image_input_key = image_input_key
 #         self.scale = scale
 #         self.kernel_parallel = kernel_parallel
@@ -388,9 +394,9 @@ def initialize_session():
 #         self.image_reduced_key = f'{self.image_input_key}{int(100*scale):02d}'
 #         self.gradients_key = f'{self.image_reduced_key}G'
 #         self.convolutions_key = f'{self.gradients_key}C{self.kernel_parallel}{self.kernel_orthogonal}'
-#         self.texture_weights_key = f'{self.convolutions_key}{int(1000*self.sharpness):003d}{self.texture_style}'   
-#         self.texture_weights_map_key = f'{self.texture_weights_key}WM'    
-#         self.total_variation_map_key = f'{self.texture_weights_key}VM'    
+#         self.texture_weights_key = f'{self.convolutions_key}{int(1000*self.sharpness):003d}{self.texture_style}'
+#         self.texture_weights_map_key = f'{self.texture_weights_key}WM'
+#         self.total_variation_map_key = f'{self.texture_weights_key}VM'
 #         self.smoother_output_fullsize_key = f'{self.texture_weights_key}{int(1000*self.lamda):003d}'
 #         self.fine_texture_map_key = f'{self.smoother_output_fullsize_key}FM'
 #         self.fusion_weights_key = f'{self.smoother_output_fullsize_key}{int(1000*self.power):003d}'
@@ -416,7 +422,7 @@ def initialize_session():
 #         output_str += f'a: {self.a}                                                    \n'
 #         output_str += f'b: {self.b}                                                    \n'
 #         output_str += f'min_gain: {self.min_gain}                                                    \n'
-#         output_str += f'max_gain: {self.max_gain}                                                    \n'                           
+#         output_str += f'max_gain: {self.max_gain}                                                    \n'
 #         output_str += f'gradients_key: {self.gradients_key}                                       \n'
 #         output_str += f'convolutions_key: {self.convolutions_key}                                 \n'
 #         output_str += f'texture_weights_key: {self.texture_weights_key}                           \n'
@@ -427,11 +433,11 @@ def initialize_session():
 #         output_str += f'adjusted_exposure_key: {self.adjusted_exposure_key}                       \n'
 #         output_str += f'enhancement_map_key: {self.enhancement_map_key}                           \n'
 #         output_str += f'enhanced_image_key: {self.enhanced_image_key}                             \n'
-        
+
 #         return output_str
 
 #     def __str__(self):
- 
+
 #         return self.__repr__()
 
 

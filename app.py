@@ -1,17 +1,16 @@
 # '''
- # href_downloader retrieves a list of urls to any downloadable files referenced by an href tag found at target_url
- # the number of each type of file found is listed in a table
- # user removes any unwanted filetypes prior to actual download (info for remaining files is shown in "Selected Files" tab")
- # clicking "Download Files" initiates download of files from target_url to temporary directory on the server
- # all downloaded files are compressed into a single .zip archive file
- # a new "Download Archive" button appears, indicating .zip file is ready
- # clicking initiates download of the .zip archive file from the server to the user's local file system
- # the temporary directory on the server is removed
+# href_downloader retrieves a list of urls to any downloadable files referenced by an href tag found at target_url
+# the number of each type of file found is listed in a table
+# user removes any unwanted filetypes prior to actual download (info for remaining files is shown in "Selected Files" tab")
+# clicking "Download Files" initiates download of files from target_url to temporary directory on the server
+# all downloaded files are compressed into a single .zip archive file
+# a new "Download Archive" button appears, indicating .zip file is ready
+# clicking initiates download of the .zip archive file from the server to the user's local file system
+# the temporary directory on the server is removed
 
 #  The new behavior: urls for remote files not successfully downloaded by request.urlretrieve() are saved to local server file "not_downloaded.txt"
 #  and an additional download attempt is made for these urls via system call to wget -i:
 #  import subprocess; command='wget -i not_downloaded.txt'; subprocess.check_output(command, shell=True, text=True)
-
 
 
 # '''
@@ -24,13 +23,13 @@ from urllib import request
 from bs4 import BeautifulSoup
 import pandas as pd
 from pathlib import Path
-from utils.io_tools import download_to_archive, clear_info
+from utils.io_tools import download_to_archive, clear_info, NEWLINE
+from utils import session
 from utils.logging import timestamp
-from utils.session import initialize_session
 import subprocess
 import re
 
-title = 'href downloader'
+title = "href downloader (local)"
 st.set_page_config(page_title=title, layout="wide", initial_sidebar_state="expanded")
 
 hide_streamlit_style = """
@@ -39,51 +38,65 @@ hide_streamlit_style = """
 footer {visibility: hidden;}
 </style>
 """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 pd.options.display.width = 1000
 pd.options.display.max_colwidth = 9999
 
 
 def extract_url_re(href):
-    rgx = r'(url\?q\=)(\S+)(&sa\=)'
+    rgx = r"(url\?q\=)(\S+)(&sa\=)"
     return re.search(rgx, href)
 
-        
-@st.cache_data(show_spinner=False)
+
+@st.experimental_memo(show_spinner=False)
 def get_target_info(target_url):
+    try:
+        r = requests.get(target_url, headers={"User-Agent": "Mozilla/5.0"})
+        soup = BeautifulSoup(r.text, "html.parser")
+        hrefs = soup.find_all("a", href=lambda x: x and "." in os.path.basename(x))
+        files = list(map(lambda x: x["href"], hrefs))
 
-    r=requests.get(target_url, headers={'User-Agent': 'Mozilla/5.0'})
-    soup = BeautifulSoup(r.text, 'html.parser')
-    hrefs = soup.find_all("a", href=lambda x: x and "." in os.path.basename(x))
-    files = list(map(lambda x: x["href"], hrefs))
-    
-    if target_url[:30]=='https://www.google.com/search?':
-        urls = [y.group(2) for y in (extract_url_re(x) for x in files) if y is not None]
-        urls = [x for x in urls if 0 < len(x.split('.')[-1]) < 5]
-        filenames = list(map(lambda x: x.split('/')[-1], urls))
-        filenames = list(map(lambda x: x.replace(r'%20','_').replace('__','_-_'), filenames))
-    else:   
-        filenames = list(map(lambda x: x.replace(r'%20','_').replace('__','_-_'), files))
-        urls = list(map(lambda x: request.urljoin(target_url, x) , files))
-        
-    filetypes = list(map(lambda x: x.split('.')[-1] , filenames))
+        # check if the target url is a google search response
+        if target_url[:30] == "https://www.google.com/search?":
+            urls = [
+                y.group(2) for y in (extract_url_re(x) for x in files) if y is not None
+            ]
+            urls = [x for x in urls if 0 < len(x.split(".")[-1]) < 5]
+            filenames = list(map(lambda x: x.split("/")[-1], urls))
+            filenames = list(
+                map(lambda x: x.replace(r"%20", "_").replace("__", "_-_"), filenames)
+            )
+        else:
+            filenames = list(
+                map(lambda x: x.replace(r"%20", "_").replace("__", "_-_"), files)
+            )
+            urls = list(map(lambda x: request.urljoin(target_url, x), files))
 
-    return pd.DataFrame({'File':filenames, 'URL': urls, 'Type':filetypes})
+        filetypes = list(map(lambda x: x.split(".")[-1], filenames))
+
+        return pd.DataFrame({"File": filenames, "URL": urls, "Type": filetypes})
+    except requests.exceptions.InvalidSchema as e:
+        return pd.DataFrame({"File": [], "URL": [], "Type": []})
+
 
 def run_command():
-    print(f'[{timestamp()}] st.session_state.console_in: {st.session_state.console_in}')
+    print(f"[{timestamp()}] st.session_state.console_in: {st.session_state.console_in}")
     try:
-        st.session_state.console_out = str(subprocess.check_output(st.session_state.console_in, shell=True, text=True))
-        st.session_state.console_out_timestamp = f'{timestamp()}'
+        st.session_state.console_out = str(
+            subprocess.check_output(st.session_state.console_in, shell=True, text=True)
+        )
+        st.session_state.console_out_timestamp = f"{timestamp()}"
     except subprocess.CalledProcessError as e:
-        st.session_state.console_out = f'exited with error\nreturncode: {e.returncode}\ncmd: {e.cmd}\noutput: {e.output}\nstderr: {e.stderr}'
-        st.session_state.console_out_timestamp = f'{timestamp()}'
+        st.session_state.console_out = f"exited with error\nreturncode: {e.returncode}\ncmd: {e.cmd}\noutput: {e.output}\nstderr: {e.stderr}"
+        st.session_state.console_out_timestamp = f"{timestamp()}"
 
-    print(f'[{timestamp()}] st.session_state.console_out: {st.session_state.console_out}')
+    print(
+        f"[{timestamp()}] st.session_state.console_out: {st.session_state.console_out}"
+    )
+
 
 def run():
-
     container = st.sidebar.container()
     with container:
         pid = os.getpid()
@@ -91,38 +104,53 @@ def run():
         if st.session_state.show_console:
             with placeholder.container():
                 with st.expander("console", expanded=True):
-                    with st.form('console'):
-                        command = st.text_input(f'[{pid}] {timestamp()}', str(st.session_state.console_in), key="console_in")
-                        submitted = st.form_submit_button('run', help="coming soon", on_click=run_command)
+                    with st.form("console"):
+                        command = st.text_input(
+                            f"[{pid}] {timestamp()}",
+                            str(st.session_state.console_in),
+                            key="console_in",
+                        )
+                        submitted = st.form_submit_button(
+                            "run", help="coming soon", on_click=run_command
+                        )
 
-                        st.write(f'IN: {command}')
-                        st.text(f'OUT:\n{st.session_state.console_out}')
+                        st.write(f"IN: {command}")
+                        st.text(f"OUT:\n{st.session_state.console_out}")
                     file_name = st.text_input("File Name", "")
                     if os.path.isfile(file_name):
-                        button = st.download_button(label="Download File", data=Path(file_name).read_bytes(), file_name=file_name, key="console_download")
+                        button = st.download_button(
+                            label="Download File",
+                            data=Path(file_name).read_bytes(),
+                            file_name=file_name,
+                            key="console_download",
+                        )
         else:
-             placeholder.empty()
+            placeholder.empty()
 
         if st.session_state.low_resources:
             clear_cache()
             st.session_state.low_resources = False
 
         if st.session_state.show_resource_usage:
-            with st.expander(f'{Process(pid).memory_info()[0]/float(2**20):.2f}', expanded=True):
+            with st.expander(
+                f"{Process(pid).memory_info()[0]/float(2**20):.2f}", expanded=True
+            ):
                 pass
                 # with st.form("Clear"):
                 #     st.session_state.cache_checked = st.checkbox("Clear Cache", help="coming soon", value=False)
                 #     st.session_state.data_checked = st.checkbox("Clear Data", help="coming soon", value=False)
                 #     st.form_submit_button("Clear", on_click=clear, args=([st.session_state.cache_checked, st.session_state.data_checked]), help="coming soon")
 
-            
-
-    st.session_state.target_url = st.text_input("Target URL:", "http://erewhon.superkuh.com/library/Math", on_change=clear_info, help="Type exact url (then Enter $\hookleftarrow$) to scan for downloadable files (e.g., http://erewhon.superkuh.com/library/Math)")
-    
+    st.session_state.target_url = st.text_input(
+        "Target URL:",
+        "http://erewhon.superkuh.com/library/Math",
+        on_change=clear_info,
+        help="Type exact url (then Enter $\hookleftarrow$) to scan for downloadable files (e.g., http://erewhon.superkuh.com/library/Math)",
+    )
 
     if st.session_state.target_url != "":
         if st.session_state.target_url[-1] != "/":
-            st.session_state.target_url = f'{st.session_state.target_url}/'
+            st.session_state.target_url = f"{st.session_state.target_url}/"
 
         if st.session_state.target_info is None:
             st.session_state.target_info = get_target_info(st.session_state.target_url)
@@ -130,84 +158,113 @@ def run():
         st.session_state.count_all = len(st.session_state.target_info)
 
         st.sidebar.write("Number of Files Found")
-        st.sidebar.dataframe(pd.DataFrame(st.session_state.target_info.groupby(by='Type').size(), columns=['Count']))
+        st.sidebar.dataframe(
+            pd.DataFrame(
+                st.session_state.target_info.groupby(by="Type").size(),
+                columns=["Count"],
+            )
+        )
 
         filetypes = st.session_state.target_info.Type.unique().tolist()
-        filetype_selection = st.sidebar.multiselect('Add/Remove File Types To Include in Download:', filetypes, default=filetypes)
-        st.session_state.selected_targets_info = st.session_state.target_info[st.session_state.target_info.Type.isin(filetype_selection)].reset_index(drop=True)
+        filetype_selection = st.sidebar.multiselect(
+            "Add/Remove File Types To Include in Download:",
+            filetypes,
+            default=filetypes,
+        )
+        st.session_state.selected_targets_info = st.session_state.target_info[
+            st.session_state.target_info.Type.isin(filetype_selection)
+        ].reset_index(drop=True)
 
         st.session_state.count_selected = len(st.session_state.selected_targets_info)
 
-        st.session_state.filenames = st.session_state.selected_targets_info.File.tolist()
+        st.session_state.filenames = (
+            st.session_state.selected_targets_info.File.tolist()
+        )
         st.session_state.urls = st.session_state.selected_targets_info.URL.tolist()
 
-        selected_tab, full_tab = st.tabs([f"• Selected Files ({st.session_state.count_selected})", f"• All Files ({st.session_state.count_all})"])
+        selected_tab, full_tab = st.tabs(
+            [
+                f"• Selected Files ({st.session_state.count_selected})",
+                f"• All Files ({st.session_state.count_all})",
+            ]
+        )
 
         with selected_tab:
             st.table(st.session_state.selected_targets_info)
 
         with full_tab:
-            st.table(st.session_state.target_info)            
-        
+            st.table(st.session_state.target_info)
+
         with st.sidebar:
             button = st.button("Create Downloadable .ZIP File")
+            status_placeholder = st.empty()
             if button:
                 ######################################
                 # Download Files to Streamlit Server
-                zip_filename = st.session_state.target_url.split('://')[-1]
-                zip_filename = zip_filename.replace('www.','').replace('.com','').replace('.','_').replace('/','-')
-                zip_filename = zip_filename + '.zip'
-                zip_filename = zip_filename.replace('-.','.')
-                st.session_state.zip_filename, st.session_state.count_downloaded = download_to_archive(st.session_state.filenames, st.session_state.urls, zip_filename=zip_filename)
+                (
+                    st.session_state.zip_filename,
+                    st.session_state.count_downloaded,
+                ) = download_to_archive(
+                    st.session_state.filenames,
+                    st.session_state.urls,
+                    status_placeholder,
+                )
 
-                if all([not st.session_state.wget_failed, os.path.exists(st.session_state.zip_filename)]):
-                
-                    st.session_state.message = f'{st.session_state.count_downloaded} files were downloaded to temporary archive {st.session_state.zip_filename}'
-                    st.write(st.session_state.message)
-
+                if all(
+                    [
+                        not st.session_state.wget_failed,
+                        os.path.exists(st.session_state.zip_filename),
+                    ]
+                ):
+                    st.session_state.message = f"{st.session_state.count_downloaded-1} files were downloaded to temporary archive:{NEWLINE} {st.session_state.zip_filename}"
+                    status_placeholder.text(st.session_state.message)
                     ###################################
                     # Download Archive from Streamlit Server to User's Filesystem
-                    st.download_button(label = f'Download {st.session_state.zip_filename}',  
-                                                    data=Path(st.session_state.zip_filename).read_bytes(),
-                                                    file_name = st.session_state.zip_filename, 
-                                                    key='download',
-                                                    help="Downloads the compressed .zip archive containing all selected files"
-                                               )  
+                    st.download_button(
+                        label=f"Download .ZIP File",
+                        data=Path(st.session_state.zip_filename).read_bytes(),
+                        file_name=st.session_state.zip_filename,
+                        key="download",
+                        help="Downloads the compressed .zip archive containing all selected files",
+                    )
                 else:
-                    st.write(st.session_state.called_process_error)
-        
-        if all([st.session_state.download, os.path.exists(st.session_state.zip_filename)]):
-            print(f'User has downloaded temporary archive file.  It will now be deleted.')
+                    status_placeholder.text(st.session_state.called_process_error)
+
+        if all(
+            [st.session_state.download, os.path.exists(st.session_state.zip_filename)]
+        ):
+            print(
+                f"User has downloaded temporary archive file.  It will now be deleted."
+            )
             os.remove(st.session_state.zip_filename)
             st.session_state.download = False
 
 
-if __name__ == '__main__':
-
-    initialize_session()
+if __name__ == "__main__":
+    session.initialize_session()
 
     query_params = st.experimental_get_query_params()
-    for k,v in query_params.items():
+    for k, v in query_params.items():
         st.session_state.query_params[k] = v[0]
-        st.session_state.query_params.setdefault(k,v[0])
+        st.session_state.query_params.setdefault(k, v[0])
 
-    if 'cache' in query_params:
-        st.session_state.cache_clearance = query_params['cache'][0]
+    if "cache" in query_params:
+        st.session_state.cache_clearance = query_params["cache"][0]
     else:
         st.session_state.cache_clearance = False
 
-    if 'resources' in query_params:
-        st.session_state.show_resource_usage = query_params['resources'][0]
+    if "resources" in query_params:
+        st.session_state.show_resource_usage = query_params["resources"][0]
     else:
         st.session_state.show_resource_usage = False
 
-    if 'console' in query_params:
-        st.session_state.show_console = query_params['console'][0]
+    if "console" in query_params:
+        st.session_state.show_console = query_params["console"][0]
     else:
         st.session_state.show_console = False
 
-    if 'debug' in query_params:
-        st.session_state.debug = query_params['debug'][0]
+    if "debug" in query_params:
+        st.session_state.debug = query_params["debug"][0]
     else:
         st.session_state.debug = False
 
