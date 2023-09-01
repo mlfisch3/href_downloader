@@ -8,8 +8,10 @@
 # clicking initiates download of the .zip archive file from the server to the user's local file system
 # the temporary directory on the server is removed
 
-#  The new behavior: urls for remote files not successfully downloaded by request.urlretrieve() are saved to local server file "not_downloaded.txt"
-#  and an additional download attempt is made for these urls via system call to wget -i:
+#  Secondary behavior: urls for remote files not successfully downloaded by request.urlretrieve() are saved to local server file "not_downloaded.txt"
+#  and an additional download attempt is made for these urls via system call to curl:
+#  import subprocess; command='xargs -n 1 curl --insecure -O --output-dir dOut < not_downloaded.txt'; subprocess.check_output(command, shell=True, text=True)
+#  or wget -i:
 #  import subprocess; command='wget -i not_downloaded.txt'; subprocess.check_output(command, shell=True, text=True)
 
 
@@ -49,7 +51,7 @@ def extract_url_re(href):
     return re.search(rgx, href)
 
 
-@st.experimental_memo(show_spinner=False)
+@st.cache_data
 def get_target_info(target_url):
     try:
         r = requests.get(target_url, headers={"User-Agent": "Mozilla/5.0"})

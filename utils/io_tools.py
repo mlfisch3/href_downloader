@@ -142,7 +142,7 @@ def abbreviate_url(url):
     return abbr_url
 
 
-# @st.experimental_memo(show_spinner=False)
+# @st.cache_data#(show_spinner=False)
 def download_by_urlretrieve(filenames, urls, dName, status_placeholder, delay_lo, delay_hi, delay=False):
     target_count = len(urls)
     not_downloaded_files = []
@@ -241,7 +241,7 @@ def download_by_curl(urls_file, dName):        # if this function fails, check i
 #    shutil.move("urls.txt", os.path.join(dName, "urls.txt"))
 #    return True
 
-# @st.experimental_memo(show_spinner=False)
+# @st.cache_data#(show_spinner=False)
 def download_by_wget(urls_file, dName):
     
     command = f"wget --no-check-certificate -i {urls_file} --random-wait -P {dName}"
