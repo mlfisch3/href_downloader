@@ -144,7 +144,7 @@ def abbreviate_url(url):
 
 # @st.cache_data#(show_spinner=False)
 def download_by_urlretrieve(filenames, fileurls, dName, status_placeholder, delay_lo, delay_hi, delay=False):
-    target_count = len(urls)
+    target_count = len(fileurls)
     not_downloaded_files = []
     not_downloaded_urls = []
     successful_files = []
@@ -263,13 +263,13 @@ def download_by_wget(urls_file, dName):
 
 
 
-def download_to_archive(filenames, urls, status_placeholder, delay_lo=30, delay_hi=120, delay=False, allow_curl=False, allow_wget=False):
+def download_to_archive(filenames, fileurls, status_placeholder, delay_lo=30, delay_hi=120, delay=False, allow_curl=False, allow_wget=False):
     temp_dir = create_temporary_directory()
 
     # Download files to server
     num_missed, missed_urls_filename = download_by_urlretrieve(
         st.session_state.filenames,
-        st.session_state.urls,
+        st.session_state.fileurls,
         temp_dir,
         status_placeholder,
         delay_lo,
