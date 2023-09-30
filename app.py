@@ -57,8 +57,9 @@ def get_target_info(target_url):
         r = requests.get(target_url, headers={"User-Agent": "Mozilla/5.0"})
         soup = BeautifulSoup(r.text, "html.parser")
         hrefs = soup.find_all("a", href=lambda x: x and "." in os.path.basename(x))
-        files = list(map(lambda x: x["href"], hrefs))
-
+        #files = list(map(lambda x: x["href"], hrefs))
+        # get all links to (static) files
+        files = [x for x in list(map(lambda x: x["href"], hrefs)) if '?' not in x]
         # check if the target url is a google search response
         if target_url[:30] == "https://www.google.com/search?":
             fileurls = [
