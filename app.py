@@ -79,7 +79,7 @@ def get_target_info(target_url):
 
         filetypes = list(map(lambda x: x.split(".")[-1], filenames))
 
-        return pd.DataFrame({"File": filenames, "URL": urls, "Type": filetypes})
+        return pd.DataFrame({"File": filenames, "URL": fileurls, "Type": filetypes})
     except requests.exceptions.InvalidSchema as e:
         return pd.DataFrame({"File": [], "URL": [], "Type": []})
 
@@ -184,7 +184,7 @@ def run():
         st.session_state.filenames = (
             st.session_state.selected_targets_info.File.tolist()
         )
-        st.session_state.urls = st.session_state.selected_targets_info.URL.tolist()
+        st.session_state.fileurls = st.session_state.selected_targets_info.URL.tolist()
 
         selected_tab, full_tab = st.tabs(
             [
@@ -210,7 +210,7 @@ def run():
                     st.session_state.count_downloaded,
                 ) = download_to_archive(
                     st.session_state.filenames,
-                    st.session_state.urls,
+                    st.session_state.fileurls,
                     status_placeholder,
                 )
 
