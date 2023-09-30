@@ -61,19 +61,21 @@ def get_target_info(target_url):
 
         # check if the target url is a google search response
         if target_url[:30] == "https://www.google.com/search?":
-            urls = [
+            fileurls = [
                 y.group(2) for y in (extract_url_re(x) for x in files) if y is not None
             ]
-            urls = [x for x in urls if 0 < len(x.split(".")[-1]) < 5]
-            filenames = list(map(lambda x: x.split("/")[-1], urls))
+            fileurls = [x for x in fileurls if 0 < len(x.split(".")[-1]) < 5]
+            filenames = list(map(lambda x: x.split("/")[-1], fileurls))
             filenames = list(
                 map(lambda x: x.replace(r"%20", "_").replace("__", "_-_"), filenames)
             )
         else:
+
+            filenames = list(map(lambda x: x.split("/")[-1], files))
             filenames = list(
-                map(lambda x: x.replace(r"%20", "_").replace("__", "_-_"), files)
+                map(lambda x: x.replace(r"%20", "_").replace("__", "_-_"), filenames)
             )
-            urls = list(map(lambda x: request.urljoin(target_url, x), files))
+            fileurls = list(map(lambda x: request.urljoin(target_url, x), files))
 
         filetypes = list(map(lambda x: x.split(".")[-1], filenames))
 

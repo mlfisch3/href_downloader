@@ -143,41 +143,41 @@ def abbreviate_url(url):
 
 
 # @st.cache_data#(show_spinner=False)
-def download_by_urlretrieve(filenames, urls, dName, status_placeholder, delay_lo, delay_hi, delay=False):
+def download_by_urlretrieve(filenames, fileurls, dName, status_placeholder, delay_lo, delay_hi, delay=False):
     target_count = len(urls)
     not_downloaded_files = []
     not_downloaded_urls = []
     successful_files = []
     successful_urls = []
 
-    for i, (filename, target_file) in stqdm(enumerate(zip(filenames, urls))):
-        print(f"[{timestamp()}] Downloading (file {i+1} of {target_count} ): {target_file}  ...")
+    for i, (filename, fileurl) in stqdm(enumerate(zip(filenames, fileurls))):
+        print(f"[{timestamp()}] Downloading (file {i+1} of {target_count} ): {fileurl}  ...")
         status_placeholder.text(
-            f"Downloading (file {i+1} of {target_count} ): {target_file}  ..."
+            f"Downloading (file {i+1} of {target_count} ): {fileurl}  ..."
         )
         fPath = os.path.join(dName, filename)
         fPath = fPath.replace(" ", "_")
         try:
-            request.urlretrieve(target_file, filename=fPath)
+            request.urlretrieve(fileurl, filename=fPath)
             successful_files.append(filename)
-            successful_urls.append(target_file)
+            successful_urls.append(fileurl)
         except:
-            print(f"[{timestamp()}]   ╚═► Download failed: {target_file}")
-            target_file_ = target_file.replace(" ", "%20")  # replace single whitespaces with hex code %20
-            if target_file_ == target_file:                
+            print(f"[{timestamp()}]   ╚═► Download failed: {fileurl}")
+            fileurl_ = fileurl.replace(" ", "%20")  # replace single whitespaces with hex code %20
+            if fileurl_ == fileurl:                
                 not_downloaded_files.append(filename)
-                not_downloaded_urls.append(target_file)  # if no whitespaces to replace, note then no further attempts with urlretrieve
+                not_downloaded_urls.append(fileurl)  # if no whitespaces to replace, note then no further attempts with urlretrieve
                 continue
             else:
-                print(f"[{timestamp()}] Downloading (file {i+1} of {target_count} ): {target_file_}  ...")  # retry download with ' ' -> '%20'
+                print(f"[{timestamp()}] Downloading (file {i+1} of {target_count} ): {fileurl_}  ...")  # retry download with ' ' -> '%20'
                 try:
-                    request.urlretrieve(target_file_, filename=fPath)
+                    request.urlretrieve(fileurl_, filename=fPath)
                     successful_files.append(filename)
-                    successful_urls.append(target_file_)
+                    successful_urls.append(fileurl_)
                 except:
-                    print(f"[{timestamp()}]   ╚═► Download failed: {target_file_}")
+                    print(f"[{timestamp()}]   ╚═► Download failed: {fileurl_}")
                     not_downloaded_files.append(filename)
-                    not_downloaded_urls.append(target_file_)              # add filename (version with %20 instead of whitespaces) to list to be retried by alternative method
+                    not_downloaded_urls.append(fileurl_)              # add filename (version with %20 instead of whitespaces) to list to be retried by alternative method
                     continue
 
         if delay:
@@ -202,7 +202,7 @@ def download_by_urlretrieve(filenames, urls, dName, status_placeholder, delay_lo
         not_downloaded_urls_filename = os.path.join(dName, "missed_urls.txt")
         with open(not_downloaded_urls_filename, "w") as fout:
             for not_downloaded_url in not_downloaded_urls:
-                fout.write(not_downloaded_url)
+                fout.write(not_downloaded_url + NEWLINE)
 
         print(f"[{timestamp()}] {num_not_downloaded} filenames written to {not_downloaded_urls_filename}")
         return num_not_downloaded, not_downloaded_urls_filename
