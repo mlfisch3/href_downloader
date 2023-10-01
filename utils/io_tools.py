@@ -188,8 +188,7 @@ def download_by_urlretrieve(filenames, fileurls, dName, status_placeholder, dela
     source_info_file_path = os.path.join(dName, "source_info.psv")
     with open(source_info_file_path, "w") as source_info_file:
         for j, (fname, furl) in enumerate(zip(successful_files, successful_urls)):
-            #source_info_file.write("|".join([str(j), fname, furl]) + NEWLINE)
-            source_info_file.write("|".join([str(j), fname, furl]))
+            source_info_file.write("|".join([str(j), fname, furl]) + NEWLINE)
 
     print(os.lstat(source_info_file_path))
     # if len(not_downloaded_files):
