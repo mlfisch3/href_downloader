@@ -279,14 +279,18 @@ def download_to_archive(filenames, fileurls, status_placeholder, delay_lo=30, de
     # Try to get any files missed in 1st download attempt
     if all([num_missed > 0, os.path.isfile(str(missed_urls_filename))]):
         print(f"{NEWLINE}[{timestamp()}]  ►►► {num_missed} files were not downloaded.")
-        
-        if all([allow_curl, shutil.which("curl") is not None]):
-            print(f"{NEWLINE}[{timestamp()}] Retrying with curl ...{NEWLINE}")
-            download_by_curl(missed_urls_filename, temp_dir)
-        elif all([allow_wget, shutil.which("wget") is not None]):
-            print(f"{NEWLINE}[{timestamp()}] Retrying with wget ...{NEWLINE}")
-            download_by_wget(missed_urls_filename, temp_dir)
-        else:
+        try:
+            if all([allow_curl, shutil.which("curl") is not None]):
+                print(f"{NEWLINE}[{timestamp()}] Retrying with curl ...{NEWLINE}")
+                download_by_curl(missed_urls_filename, temp_dir)
+            elif all([allow_wget, shutil.which("wget") is not None]):
+                print(f"{NEWLINE}[{timestamp()}] Retrying with wget ...{NEWLINE}")
+                download_by_wget(missed_urls_filename, temp_dir)
+            else:
+                print(f"[{timestamp()}] WARNING: Skipping alternate download method. ")
+                print(f"[{timestamp()}] Undownloaded files are listed in {missed_urls_filename}")
+        except FileNotFoundError as e:
+            print(f"[{timestamp()}] {e}")
             print(f"[{timestamp()}] WARNING: Skipping alternate download method. ")
             print(f"[{timestamp()}] Undownloaded files are listed in {missed_urls_filename}")
 
