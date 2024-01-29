@@ -54,7 +54,8 @@ def extract_url_re(href):
 @st.cache_data
 def get_target_info(target_url):
     try:
-        r = requests.get(target_url, headers={"User-Agent": "Mozilla/5.0"})
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"}
+        r = requests.get(target_url, headers=headers)
         soup = BeautifulSoup(r.text, "html.parser")
         hrefs = soup.find_all("a", href=lambda x: x and "." in os.path.basename(x))
         #files = list(map(lambda x: x["href"], hrefs))
