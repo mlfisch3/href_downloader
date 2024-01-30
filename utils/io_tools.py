@@ -143,47 +143,54 @@ def abbreviate_url(url):
 
 
 # @st.cache_data#(show_spinner=False)
-def download_by_urlretrieve(filenames, fileurls, dName, status_placeholder, delay_lo, delay_hi, delay=False):
-    target_count = len(fileurls)
-    not_downloaded_files = []
-    not_downloaded_urls = []
+#TODO: fix bad function name(s), now that download_by_get() is used in exception handling of download_by_urlretrieve()
+def download_by_urlretrieve(filenames, urls, dName, status_placeholder, delay_lo, delay_hi, delay=False):
+    target_count = len(urls)
+    not_downloaded = []
     successful_files = []
     successful_urls = []
 
-    for i, (filename, fileurl) in stqdm(enumerate(zip(filenames, fileurls))):
-        print(f"[{timestamp()}] Downloading (file {i+1} of {target_count} ): {fileurl}  ...")
+    for i, (filename, target_file) in stqdm(enumerate(zip(filenames, urls))):
+        print(f"Downloading (file {i+1} of {target_count} ): {target_file}  ...")
         status_placeholder.text(
-            f"Downloading (file {i+1} of {target_count} ): {fileurl}  ..."
+            f"Downloading (file {i+1} of {target_count} ): {target_file}  ..."
         )
         fPath = os.path.join(dName, filename)
         fPath = fPath.replace(" ", "_")
         try:
-            request.urlretrieve(fileurl, filename=fPath)
+            request.urlretrieve(target_file, filename=fPath)
             successful_files.append(filename)
-            successful_urls.append(fileurl)
+            successful_urls.append(target_file)
         except:
-            print(f"[{timestamp()}]   ╚═► Download failed: {fileurl}")
-            fileurl_ = fileurl.replace(" ", "%20")  # replace single whitespaces with hex code %20
-            if fileurl_ == fileurl:                
-                not_downloaded_files.append(filename)
-                not_downloaded_urls.append(fileurl)  # if no whitespaces to replace, note then no further attempts with urlretrieve
-                continue
-            else:
-                print(f"[{timestamp()}] Downloading (file {i+1} of {target_count} ): {fileurl_}  ...")  # retry download with ' ' -> '%20'
-                try:
-                    request.urlretrieve(fileurl_, filename=fPath)
-                    successful_files.append(filename)
-                    successful_urls.append(fileurl_)
-                except:
-                    print(f"[{timestamp()}]   ╚═► Download failed: {fileurl_}")
-                    not_downloaded_files.append(filename)
-                    not_downloaded_urls.append(fileurl_)              # add filename (version with %20 instead of whitespaces) to list to be retried by alternative method
-                    continue
+            print(f"  ╚═► Download failed: {target_file}")
+            try:
+                download_by_get(target_file, fPath)
+                successful_files.append(filename)
+                successful_urls.append(target_file)
+            except:
+                not_downloaded.append(target_file)
+                print(f"  ╚═► Download failed: {target_file}")
+                target_file_ = target_file.replace(" ", "%20")
+                if target_file_ != target_file:                    
+                    print(f"Downloading (file {i+1} of {target_count} ): {target_file_}  ...")
+                    try:
+                        request.urlretrieve(target_file_, filename=fPath)                    
+                        successful_files.append(filename)
+                        successful_urls.append(target_file_)
+                    except:                    
+                        try:
+                            download_by_get(target_file_, fPath)
+                            successful_files.append(filename)
+                            successful_urls.append(target_file_)
+                        except:
+                            not_downloaded.append(target_file_)
+                            print(f"  ╚═► Download failed: {target_file_}")
+                            continue
 
         if delay:
             delta = random.randint(delay_lo, delay_hi)
             time = timeit.timeit("time.sleep(0.01)", number=delta)
-            print(f"[{timestamp()}] [{delta}] sleeping for {time} seconds...")
+            print("[", delta, "] sleeping for ", time, " seconds...")
 
     source_info_file_path = os.path.join(dName, "source_info.psv")
     with open(source_info_file_path, "w") as source_info_file:
@@ -191,26 +198,22 @@ def download_by_urlretrieve(filenames, fileurls, dName, status_placeholder, dela
             source_info_file.write("|".join([str(j), fname, furl]) + NEWLINE)
 
     print(os.lstat(source_info_file_path))
-    # if len(not_downloaded_files):
-    #     not_downloaded_file_path = os.path.join(dName, "not_downloaded.psv")
-    #     with open(not_downloaded_file_path, "w") as not_downloaded_info_file:
-    #         for j, (fname, furl) in enumerate(zip(not_downloaded_files, not_downloaded_urls)):
-    #             not_downloaded_info_file.write("|".join([str(j), fname, furl]) + NEWLINE)
-    num_not_downloaded = len(not_downloaded_urls)
-    if num_not_downloaded > 0:
-        not_downloaded_urls_filename = os.path.join(dName, "missed_urls.txt")
-        with open(not_downloaded_urls_filename, "w") as fout:
-            for not_downloaded_url in not_downloaded_urls:
-                fout.write(not_downloaded_url + NEWLINE)
+    return not_downloaded
 
-        print(f"[{timestamp()}] {num_not_downloaded} filenames written to {not_downloaded_urls_filename}")
-        return num_not_downloaded, not_downloaded_urls_filename
-
-    print(f"[{timestamp()}] All files downloaded")
-    return 0, None
+def download_by_get(target_file, local_download_path, verify=False):
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"}
+    response = requests.get(target_file, headers=headers, verify=verify)
+    print(f"  ╚═► Attempting to GET {target_file}  ...")
+    if response.status_code == 200:
+        with open(local_download_path, 'wb') as f:
+            f.write(response.content)
+        print("  ╚═► Download successful")
+    else:
+        print(f"  ╚═► Failed to download. Status code: {response.status_code}")
 
 
-def download_by_curl(urls_file, dName):        # if this function fails, check if newline chars being written to source_info.psv and missed_urls.txt are consistent with posix/nt
+def download_by_curl(urls_file, dName):        
+    # if this function fails, check if newline chars being written to source_info.psv and missed_urls.txt are consistent with posix/nt
     
     # Determine OS type (Linux or Windows)  
     if os.name == "posix":                           # 
@@ -218,7 +221,7 @@ def download_by_curl(urls_file, dName):        # if this function fails, check i
         command += f"{dName}"
         command += " < "
         command += f"{urls_file}"
-    elif os.name == "nt":                            # C:\GIT_REPOS\HREF_DOWNLOADER_LOCAL\TMP20230606_020900>for /f "tokens=*" %i in (missed_urls.txt) do curl --insecure -O "%i" -J -L
+    elif os.name == "nt":                      # C:\GIT_REPOS\HREF_DOWNLOADER_LOCAL\TMP20230606_020900>for /f "tokens=*" %i in (missed_urls.txt) do curl --insecure -O "%i" -J -L
         command = r'for /f "tokens=*" %i in '
         command += f"({urls_file})"
         command += r' do curl --insecure -O "%i"'
