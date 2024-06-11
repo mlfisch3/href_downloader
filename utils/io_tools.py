@@ -269,7 +269,7 @@ def download_to_archive(filenames, fileurls, status_placeholder, delay_lo=30, de
     temp_dir = create_temporary_directory()
 
     # Download files to server
-    num_missed, missed_urls_filename = download_by_urlretrieve(
+    missed_urls = download_by_urlretrieve(
         st.session_state.filenames,
         st.session_state.fileurls,
         temp_dir,
@@ -279,23 +279,32 @@ def download_to_archive(filenames, fileurls, status_placeholder, delay_lo=30, de
         delay,
     )
 
+    num_missed = len(missed_urls)
+    print(f"{NEWLINE}[{timestamp()}]  ►►► {num_missed} files were not downloaded.")
     # Try to get any files missed in 1st download attempt
-    if all([num_missed > 0, os.path.isfile(str(missed_urls_filename))]):
-        print(f"{NEWLINE}[{timestamp()}]  ►►► {num_missed} files were not downloaded.")
-        try:
-            if all([allow_curl, shutil.which("curl") is not None]):
-                print(f"{NEWLINE}[{timestamp()}] Retrying with curl ...{NEWLINE}")
-                download_by_curl(missed_urls_filename, temp_dir)
-            elif all([allow_wget, shutil.which("wget") is not None]):
-                print(f"{NEWLINE}[{timestamp()}] Retrying with wget ...{NEWLINE}")
-                download_by_wget(missed_urls_filename, temp_dir)
-            else:
+    if num_missed > 0:
+        file_of_missed_urls = os.path.join(temp_dir, "missed_urls.txt")
+        with open(file_of_missed_urls, "w") as missed_urls:
+            for missed_url in missed_urls:
+                file_of_missed_urls.write(missed_url + NEWLINE)
+
+        if os.path.isfile(str(file_of_missed_urls)):
+            print(f"{NEWLINE}[{timestamp()}] Retrying download of missed files ...{NEWLINE}")
+            
+            try:
+                if all([allow_curl, shutil.which("curl") is not None]):
+                    print(f"{NEWLINE}[{timestamp()}] Retrying with curl ...{NEWLINE}")
+                    download_by_curl(file_of_missed_urls, temp_dir)
+                elif all([allow_wget, shutil.which("wget") is not None]):
+                    print(f"{NEWLINE}[{timestamp()}] Retrying with wget ...{NEWLINE}")
+                    download_by_wget(file_of_missed_urls, temp_dir)
+                else:
+                    print(f"[{timestamp()}] WARNING: Skipping alternate download method. ")
+                    print(f"[{timestamp()}] Undownloaded files are listed in {file_of_missed_urls}")
+            except FileNotFoundError as e:
+                print(f"[{timestamp()}] {e}")
                 print(f"[{timestamp()}] WARNING: Skipping alternate download method. ")
-                print(f"[{timestamp()}] Undownloaded files are listed in {missed_urls_filename}")
-        except FileNotFoundError as e:
-            print(f"[{timestamp()}] {e}")
-            print(f"[{timestamp()}] WARNING: Skipping alternate download method. ")
-            print(f"[{timestamp()}] Undownloaded files are listed in {missed_urls_filename}")
+                print(f"[{timestamp()}] Undownloaded files are listed in {file_of_missed_urls}")
 
     # Copy downloaded files into compressed archive file
     zip_filename = abbreviate_url(st.session_state.target_url) + ".zip"

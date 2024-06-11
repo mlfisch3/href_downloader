@@ -31,7 +31,7 @@ from utils.logging import timestamp
 import subprocess
 import re
 
-title = "href downloader (local)"
+title = "↓↓ href downloader ↓↓"
 st.set_page_config(page_title=title, layout="wide", initial_sidebar_state="expanded")
 
 hide_streamlit_style = """
@@ -214,6 +214,8 @@ def run():
                     st.session_state.filenames,
                     st.session_state.fileurls,
                     status_placeholder,
+                    st.session_state.allow_curl,
+                    st.session_state.allow_wget,
                 )
 
                 if all(

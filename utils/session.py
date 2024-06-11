@@ -5,11 +5,11 @@ def initialize_session():
     if "status" not in st.session_state:
         st.session_state.status = ""
 
-    if "query_params" not in st.session_state:
-        st.session_state.query_params = {}
-        st.session_state.query_params["console"] = False
-        st.session_state.query_params["resources"] = False
-        st.session_state.query_params["cache"] = False
+    if "query_param_values" not in st.session_state:
+        st.session_state.query_param_values = {}
+        st.session_state.query_param_values["console"] = False
+        st.session_state.query_param_values["resources"] = False
+        st.session_state.query_param_values["cache"] = False
 
     if "show_resource_usage" not in st.session_state:
         st.session_state.show_resource_usage = False
@@ -34,8 +34,14 @@ def initialize_session():
     if "low_resources" not in st.session_state:
         st.session_state.low_resources = False
 
+    if "allow_curl" not in st.session_state:
+        st.session_state.allow_curl = False
+
     if "curl_failed" not in st.session_state:
         st.session_state.curl_failed = False
+
+    if "allow_wget" not in st.session_state:
+        st.session_state.allow_wget = False
 
     if "wget_failed" not in st.session_state:
         st.session_state.wget_failed = False
